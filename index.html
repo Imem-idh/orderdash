@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="OrderDash" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>OrderDash</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1c1c1c;
+      --border: #2a2a2a;
+      --accent: #c8f135;
+      --accent2: #f1a435;
+      --accent3: #35c8f1;
+      --text: #f0f0f0;
+      --muted: #666;
+      --danger: #f14335;
+      --success: #35f178;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100svh;
+      overscroll-behavior: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--accent); }
+
+    .topbar-right { display: flex; gap: 10px; align-items: center; }
+
+    .notif-btn {
+      position: relative;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: border-color 0.2s;
+    }
+    .notif-btn:active { transform: scale(0.93); }
+    .notif-badge {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      border: 2px solid var(--bg);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.3); }
+    }
+
+    .status-dot {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--muted);
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    /* ── SCROLL CONTAINER ── */
+    .scroll {
+      padding: 20px;
+      display: flex; flex-direction: column;
+      gap: 16px;
+      padding-bottom: 100px;
+    }
+
+    /* ── GREETING ── */
+    .greeting h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px; font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    .greeting p { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    /* ── REVENUE HERO ── */
+    .revenue-card {
+      background: var(--accent);
+      border-radius: 20px;
+      padding: 24px;
+      color: #0a0a0a;
+      position: relative;
+      overflow: hidden;
+    }
+    .revenue-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.07);
+    }
+    .revenue-card::after {
+      content: '';
+      position: absolute;
+      bottom: -50px; right: 20px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.05);
+    }
+    .revenue-label {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.6;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .revenue-amount {
+      font-family: 'Syne', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin: 8px 0 4px;
+    }
+    .revenue-change {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    .revenue-change b { opacity: 1; font-weight: 500; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex; flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:active { border-color: var(--accent); }
+
+    .stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .stat-icon.green { background: rgba(53,241,120,0.12); }
+    .stat-icon.orange { background: rgba(241,164,53,0.12); }
+    .stat-icon.blue { background: rgba(53,200,241,0.12); }
+    .stat-icon.red { background: rgba(241,67,53,0.12); }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-title h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px; font-weight: 700;
+    }
+    .see-all {
+      font-size: 11px; color: var(--accent);
+      cursor: pointer; text-decoration: none;
+    }
+
+    /* ── ORDER LIST ── */
+    .orders-list {
+      display: flex; flex-direction: column;
+      gap: 10px;
+    }
+
+    .order-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      animation: slideIn 0.35s ease both;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-card:active { background: var(--surface2); border-color: var(--accent); }
+    .order-card.new { border-left: 3px solid var(--accent); }
+    .order-card.processing { border-left: 3px solid var(--accent2); }
+    .order-card.shipped { border-left: 3px solid var(--accent3); }
+    .order-card.delivered { border-left: 3px solid var(--success); }
+
+    .order-avatar {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .order-info { flex: 1; min-width: 0; }
+    .order-name {
+      font-size: 13px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .order-id { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    .order-right { text-align: right; flex-shrink: 0; }
+    .order-price {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700;
+    }
+    .order-badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .badge-new { background: rgba(200,241,53,0.15); color: var(--accent); }
+    .badge-processing { background: rgba(241,164,53,0.15); color: var(--accent2); }
+    .badge-shipped { background: rgba(53,200,241,0.15); color: var(--accent3); }
+    .badge-delivered { background: rgba(53,241,120,0.15); color: var(--success); }
+
+    /* ── NOTIFICATION PANEL ── */
+    .notif-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+    }
+    .notif-panel.open { display: block; }
+
+    .notif-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+    }
+
+    .notif-sheet {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      border: 1px solid var(--border);
+      padding: 12px 20px 40px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: sheetUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes sheetUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin: 0 auto 20px;
+    }
+
+    .sheet-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px; font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .notif-item {
+      display: flex; gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      animation: slideIn 0.25s ease both;
+    }
+    .notif-item:last-child { border-bottom: none; }
+
+    .notif-icon {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .notif-text .ntitle { font-size: 13px; font-weight: 500; }
+    .notif-text .nsub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .notif-time { font-size: 10px; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 76px;
+      background: rgba(14,14,14,0.9);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-around;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-item {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: background 0.2s;
+      flex: 1;
+    }
+    .nav-item.active .nav-icon { color: var(--accent); }
+    .nav-item.active .nav-label { color: var(--accent); }
+
+    .nav-icon { font-size: 20px; color: var(--muted); transition: color 0.2s; }
+    .nav-label { font-size: 9px; color: var(--muted); transition: color 0.2s; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      top: 80px; left: 20px; right: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      z-index: 300;
+      transform: translateY(-120px);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .toast.show { transform: translateY(0); }
+    .toast-icon { font-size: 22px; }
+    .toast-text .ttitle { font-size: 13px; font-weight: 500; }
+    .toast-text .tsub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── PUSH ENABLE BANNER ── */
+    .push-banner {
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex; gap: 14px; align-items: center;
+    }
+    .push-banner-icon { font-size: 28px; }
+    .push-banner-text { flex: 1; }
+    .push-banner-text h3 { font-size: 14px; font-weight: 600; }
+    .push-banner-text p { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .push-btn {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .push-btn:active { opacity: 0.85; }
+    #pushBanner { display: block; }
+
+    /* ── MINI CHART ── */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .chart-bar-row {
+      display: flex; align-items: flex-end; gap: 6px;
+      height: 60px; margin-top: 14px;
+    }
+    .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+    .bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: var(--border);
+      transition: height 0.5s ease;
+    }
+    .bar.active { background: var(--accent); }
+    .bar-label { font-size: 9px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">Order<span>Dash</span></div>
+  <div class="topbar-right">
+    <div class="status-dot"><div class="dot"></div>Live</div>
+    <div class="notif-btn" onclick="openNotifs()">
+      🔔
+      <div class="notif-badge" id="notifBadge"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon">🛒</div>
+  <div class="toast-text">
+    <div class="ttitle" id="toastTitle">Nouvelle commande !</div>
+    <div class="tsub" id="toastSub">Chargement...</div>
+  </div>
+</div>
+
+<!-- MAIN SCROLL -->
+<div class="scroll">
+
+  <!-- Greeting -->
+  <div class="greeting">
+    <h1>Bonjour 👋<br>Voici ton activité</h1>
+    <p id="currentDate">—</p>
+  </div>
+
+  <!-- Push banner -->
+  <div class="push-banner" id="pushBanner">
+    <div class="push-banner-icon">🔔</div>
+    <div class="push-banner-text">
+      <h3>Active les notifications</h3>
+      <p>Reçois les commandes en temps réel</p>
+    </div>
+    <button class="push-btn" onclick="requestNotifPermission()">Activer</button>
+  </div>
+
+  <!-- Revenue hero -->
+  <div class="revenue-card">
+    <div class="revenue-label">Revenus aujourd'hui</div>
+    <div class="revenue-amount" id="revenueAmount">0 FCFA</div>
+    <div class="revenue-change">vs hier · <b id="revenueChange">+0%</b></div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon green">📦</div>
+      <div class="stat-value" id="totalOrders">0</div>
+      <div class="stat-label">Commandes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">⏳</div>
+      <div class="stat-value" id="pendingOrders">0</div>
+      <div class="stat-label">En attente</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">🚚</div>
+      <div class="stat-value" id="shippedOrders">0</div>
+      <div class="stat-label">Expédiées</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">✅</div>
+      <div class="stat-value" id="deliveredOrders">0</div>
+      <div class="stat-label">Livrées</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <div class="section-title" style="margin-bottom:0">
+      <h2>Commandes / 7 jours</h2>
+    </div>
+    <div class="chart-bar-row" id="chartBars"></div>
+  </div>
+
+  <!-- Recent orders -->
+  <div class="section-title">
+    <h2>Commandes récentes</h2>
+    <span class="see-all" onclick="simulateOrder()">+ Simuler</span>
+  </div>
+  <div class="orders-list" id="ordersList"></div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon">📊</div>
+    <div class="nav-label">Dashboard</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">📦</div>
+    <div class="nav-label">Commandes</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label">Clients</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Paramètres</div>
+  </div>
+</div>
+
+<!-- NOTIFICATION PANEL -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-overlay" onclick="closeNotifs()"></div>
+  <div class="notif-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Notifications</div>
+    <div id="notifList"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────
+let orders = [];
+let notifications = [];
+let stats = { total: 0, pending: 0, shipped: 0, delivered: 0, revenue: 0 };
+
+const names = ["Amadou D.", "Fatou S.", "Moussa K.", "Aissatou B.", "Ibrahim T.", "Mariama C.", "Oumar N.", "Khady F.", "Lamine B.", "Rokhaya D."];
+const products = ["Boubou Sénégalais", "Tissu Wax 6m", "Sac cuir artisanal", "Bijoux traditionnels", "Chaussures brodées", "Caftan Premium", "Pagnes colorés", "Ceinture cuir", "Sandales artisanales"];
+const emojis = ["👗","👜","🧣","👠","💍","🧢","👒","🎽","🪡"];
+const statusList = ["new","processing","shipped","delivered"];
+const statusLabels = { new:"Nouveau", processing:"En cours", shipped:"Expédié", delivered:"Livré" };
+
+function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function randInt(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
+
+// ─── INIT ───────────────────────────────────────
+function init() {
+  // Date
+  document.getElementById('currentDate').textContent =
+    new Date().toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long'});
+
+  // Seed initial orders
+  const count = 8;
+  for(let i=0;i<count;i++) {
+    const st = rand(statusList);
+    addOrderToList({
+      id: `#${1000+i}`,
+      name: rand(names),
+      product: rand(products),
+      emoji: rand(emojis),
+      price: randInt(8,95)*1000,
+      status: st,
+      time: `${randInt(1,8)}h ago`
+    }, false);
+  }
+
+  // Revenue
+  stats.revenue = orders.reduce((a,o) => a + o.price, 0);
+  updateStats();
+  renderChart();
+
+  // Check notif permission
+  if(Notification.permission === 'granted') {
+    document.getElementById('pushBanner').style.display = 'none';
+  }
+
+  // Auto simulate new order every 30s
+  setInterval(simulateOrder, 30000);
+}
+
+// ─── ADD ORDER ───────────────────────────────────
+function addOrderToList(order, animate=true) {
+  orders.unshift(order);
+
+  // Stats
+  stats.total++;
+  if(order.status === 'new') stats.pending++;
+  if(order.status === 'processing') stats.pending++;
+  if(order.status === 'shipped') stats.shipped++;
+  if(order.status === 'delivered') stats.delivered++;
+  stats.revenue += order.price;
+
+  // Render
+  const list = document.getElementById('ordersList');
+  const div = document.createElement('div');
+  div.className = `order-card ${order.status}`;
+  div.style.animationDelay = animate ? '0s' : `${orders.indexOf(order)*0.05}s`;
+  div.innerHTML = `
+    <div class="order-avatar">${order.emoji}</div>
+    <div class="order-info">
+      <div class="order-name">${order.name} · ${order.product}</div>
+      <div class="order-id">${order.id} · ${order.time}</div>
+    </div>
+    <div class="order-right">
+      <div class="order-price">${order.price.toLocaleString('fr-FR')} F</div>
+      <span class="order-badge badge-${order.status}">${statusLabels[order.status]}</span>
+    </div>
+  `;
+  list.prepend(div);
+
+  // Keep max 12 visible
+  while(list.children.length > 12) list.removeChild(list.lastChild);
+}
+
+// ─── SIMULATE NEW ORDER ─────────────────────────
+function simulateOrder() {
+  const order = {
+    id: `#${1000+orders.length}`,
+    name: rand(names),
+    product: rand(products),
+    emoji: rand(emojis),
+    price: randInt(8,95)*1000,
+    status: 'new',
+    time: 'À l\'instant'
+  };
+  addOrderToList(order, true);
+  updateStats();
+  showToast(`Commande ${order.id}`, `${order.name} · ${order.price.toLocaleString('fr-FR')} FCFA`);
+  addNotification(`🛒 Nouvelle commande ${order.id}`, `${order.name} vient de commander`);
+  sendPushNotification(order);
+  document.getElementById('notifBadge').style.display = 'block';
+}
+
+// ─── UPDATE STATS ────────────────────────────────
+function updateStats() {
+  document.getElementById('revenueAmount').textContent =
+    stats.revenue.toLocaleString('fr-FR') + ' FCFA';
+  document.getElementById('revenueChange').textContent =
+    '+' + (12 + Math.floor(Math.random()*8)) + '%';
+  document.getElementById('totalOrders').textContent = stats.total;
+  document.getElementById('pendingOrders').textContent = stats.pending;
+  document.getElementById('shippedOrders').textContent = stats.shipped;
+  document.getElementById('deliveredOrders').textContent = stats.delivered;
+}
+
+// ─── CHART ───────────────────────────────────────
+function renderChart() {
+  const days = ['L','M','M','J','V','S','D'];
+  const vals = [5,8,3,12,7,15,randInt(8,20)];
+  const max = Math.max(...vals);
+  const cont = document.getElementById('chartBars');
+  cont.innerHTML = '';
+  days.forEach((d,i) => {
+    const pct = (vals[i]/max)*100;
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    wrap.innerHTML = `
+      <div class="bar${i===6?' active':''}" style="height:${pct}%"></div>
+      <div class="bar-label">${d}</div>`;
+    cont.appendChild(wrap);
+  });
+}
+
+// ─── TOAST ───────────────────────────────────────
+let toastTimer;
+function showToast(title, sub) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastSub').textContent = sub;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ─── NOTIFICATIONS PANEL ─────────────────────────
+function addNotification(title, sub) {
+  notifications.unshift({ title, sub, time: 'À l\'instant' });
+}
+
+function openNotifs() {
+  document.getElementById('notifPanel').classList.add('open');
+  document.getElementById('notifBadge').style.display = 'none';
+  renderNotifs();
+}
+
+function closeNotifs() {
+  document.getElementById('notifPanel').classList.remove('open');
+}
+
+function renderNotifs() {
+  const list = document.getElementById('notifList');
+  list.innerHTML = '';
+  if(notifications.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:20px 0">Aucune notification</p>';
+    return;
+  }
+  notifications.slice(0,20).forEach((n,i) => {
+    const d = document.createElement('div');
+    d.className = 'notif-item';
+    d.style.animationDelay = `${i*0.04}s`;
+    d.innerHTML = `
+      <div class="notif-icon">🛒</div>
+      <div class="notif-text">
+        <div class="ntitle">${n.title}</div>
+        <div class="nsub">${n.sub}</div>
+      </div>
+      <div class="notif-time">${n.time}</div>`;
+    list.appendChild(d);
+  });
+}
+
+// ─── PUSH NOTIFICATIONS ──────────────────────────
+function requestNotifPermission() {
+  if(!('Notification' in window)) {
+    alert('Notifications non supportées sur ce navigateur.');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    if(perm === 'granted') {
+      document.getElementById('pushBanner').style.display = 'none';
+      showToast('Notifications activées ✅', 'Tu recevras tes commandes en direct');
+      new Notification('OrderDash', {
+        body: 'Notifications activées avec succès ! 🎉',
+        icon: 'icons/icon-192.png'
+      });
+    }
+  });
+}
+
+function sendPushNotification(order) {
+  if(Notification.permission === 'granted') {
+    new Notification(`🛒 Commande ${order.id}`, {
+      body: `${order.name} · ${order.price.toLocaleString('fr-FR')} FCFA`,
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-192.png',
+      vibrate: [200, 100, 200]
+    });
+  }
+}
+
+// ─── SERVICE WORKER ──────────────────────────────
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('SW registered');
+  }).catch(console.error);
+}
+
+// ─── NAV ─────────────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ─── BOOTSTRAP ───────────────────────────────────
+init();
+</script>
+</body>
+</html>
