@@ -768,8 +768,28 @@ function sendPushNotification(order) {
 
 // ─── SERVICE WORKER ──────────────────────────────
 if('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(() => {
+  navigator.serviceWorker.register('sw.js').then(async reg => {
     console.log('SW registered');
+    
+    // Attendre que le SW soit actif
+    await navigator.serviceWorker.ready;
+    
+    // Récupérer ou créer la subscription push
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: 'BOCZaBXqoT_YXLmoVlIo1FvnAjnVRmxYELA1gXiQ8O9sXLMCmzwEjWTgruBi2h9piUbCKgMcpTXDTOpk4AIHRXA'
+      });
+    }
+    
+    // Envoyer la subscription au serveur
+    await fetch('https://orderdash-production.up.railway.app/api/subscribe', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(sub)
+    });
+    console.log('Appareil enregistré !');
   }).catch(console.error);
 }
 
