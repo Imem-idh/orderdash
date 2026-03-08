@@ -32,6 +32,7 @@ webpush.setVapidDetails(
 // ─── STOCKAGE DES SUBSCRIPTIONS ─────────────────────
 // En production : utilise une base de données (SQLite, MongoDB, etc.)
 let subscriptions = [];
+let expoTokens = []; 
 
 // ─── ENDPOINT : Enregistrer un appareil ─────────────
 app.post('/api/subscribe', (req, res) => {
@@ -42,6 +43,16 @@ app.post('/api/subscribe', (req, res) => {
     console.log(`📱 Nouvel appareil enregistré. Total: ${subscriptions.length}`);
   }
   res.status(201).json({ message: 'Abonnement enregistré' });
+});
+
+// Expo Push Tokens
+app.post('/api/subscribe-expo', (req, res) => {
+  const { token } = req.body;
+  if(token && !expoTokens.includes(token)) {
+    expoTokens.push(token);
+    console.log(`📱 Expo token enregistré. Total: ${expoTokens.length}`);
+  }
+  res.status(201).json({ message: 'Token enregistré' });
 });
 
 // ─── ENDPOINT : Webhook depuis ton plugin ────────────
@@ -72,6 +83,20 @@ app.post('/api/webhook/new-order', async (req, res) => {
 
   const sent = results.filter(r => r.status === 'fulfilled').length;
   res.json({ message: `Notif envoyée à ${sent} appareil(s)` });
+  
+  // Envoie aussi via Expo
+  if(expoTokens.length > 0) {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expoTokens.map(token => ({
+        to: token,
+        title: `🛒 Commande #${order.id}`,
+        body: `${order.customer} · ${order.amount} FCFA`,
+        data: { order }
+      })))
+    });
+  }
 });
 
 // ─── ENDPOINT : Test manuel ──────────────────────────
