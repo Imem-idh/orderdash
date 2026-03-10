@@ -13,6 +13,23 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
+// Telegram config
+const TELEGRAM_TOKEN = '8720691335:AAFv4b61P8DJ7PMbY-MJklNbk1WIgEvG4ug';
+const TELEGRAM_CHAT_ID = '6553332754';
+
+async function sendTelegram(order) {
+  const text = `🛒 *Nouvelle commande \\#${order.id}*\n👤 ${order.customer}\n💰 ${order.amount} FCFA\n📦 ${order.product || 'Produit'}`;
+  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: text,
+      parse_mode: 'Markdown'
+    })
+  });
+}
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('.')); // Sert tes fichiers PWA
@@ -82,8 +99,9 @@ app.post('/api/webhook/new-order', async (req, res) => {
   );
 
   const sent = results.filter(r => r.status === 'fulfilled').length;
+  await sendTelegram(order);
   res.json({ message: `Notif envoyée à ${sent} appareil(s)` });
-  
+
   // Envoie aussi via Expo
   if(expoTokens.length > 0) {
     await fetch('https://exp.host/--/api/v2/push/send', {
